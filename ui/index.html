@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OptiCull RAW &amp; Lytro Illum 4D — Tauri v2 Native Shell</title>
+    <style>
+      :root {
+        --bg: #0b0c0e;
+        --surface: #131519;
+        --border: #22262e;
+        --text: #f1f3f5;
+        --muted: #8a919e;
+        --accent: #f59e0b;
+        --cyan: #06b6d4;
+        --green: #10b981;
+        --red: #ef4444;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: system-ui, -apple-system, sans-serif;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        overflow: hidden;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 20px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+      }
+      .controls {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        padding: 14px 20px;
+        border-bottom: 1px solid var(--border);
+        background: #0f1115;
+      }
+      input[type="text"],
+      select {
+        background: var(--surface);
+        color: var(--text);
+        border: 1px solid var(--border);
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 13px;
+      }
+      input[type="text"] {
+        flex: 1;
+      }
+      button {
+        background: var(--accent);
+        color: #0b0c0e;
+        font-weight: 600;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .progress-wrap {
+        padding: 10px 20px;
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+      }
+      .progress-bar-bg {
+        width: 100%;
+        height: 8px;
+        background: #1c2029;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .progress-bar-fill {
+        height: 100%;
+        width: 0%;
+        background: var(--accent);
+        transition: width 120ms ease-out;
+      }
+      .table-container {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px 20px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        font-variant-numeric: tabular-nums;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--border);
+      }
+      th {
+        color: var(--muted);
+        font-weight: 500;
+        position: sticky;
+        top: 0;
+        background: var(--bg);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <strong>OptiCull RAW &amp; Lytro Illum 4D Studio</strong>
+      <span id="backend-status" style="font-size: 12px; color: var(--muted)">Готов к локальному анализу</span>
+    </header>
+
+    <section class="controls">
+      <input
+        id="folder-input"
+        type="text"
+        placeholder="Путь к каталогу съемки (RAW / JPEG / Lytro .LFR), например D:\Shoots\Session_01"
+      />
+      <select id="backend-select"></select>
+      <button id="start-btn">Запустить пакетный отбор</button>
+    </section>
+
+    <section class="progress-wrap">
+      <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px">
+        <span id="progress-label">Ожидание запуска...</span>
+        <span id="progress-percent">0%</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div id="progress-fill" class="progress-bar-fill"></div>
+      </div>
+    </section>
+
+    <main class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Файл</th>
+            <th>Формат</th>
+            <th>Резкость (Laplacian)</th>
+            <th>Эстетика (ONNX)</th>
+            <th>Сдвиг EV (Exposure2012)</th>
+            <th>Lytro 4D λ / Диафрагма</th>
+            <th>Рейтинг и Метка</th>
+            <th>Статус .XMP</th>
+          </tr>
+        </thead>
+        <tbody id="results-body"></tbody>
+      </table>
+    </main>
+
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

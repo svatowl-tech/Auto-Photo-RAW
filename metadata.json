@@ -1,0 +1,6 @@
+{
+  "name": "OptiCull RAW & Lytro Illum 4D Studio",
+  "description": "Автономная кроссплатформенная станция на базе Rust, ONNX Runtime и Tauri v2 для пакетного AI-отбора фотографий (RAW/JPEG/Lytro .LFR), оценки резкости Лапласа, 4D-рефокусировки Lytro Illum и генерации Adobe XMP sidecar-файлов.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

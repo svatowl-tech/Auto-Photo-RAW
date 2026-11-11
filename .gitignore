@@ -1,0 +1,37 @@
+# Node / Frontend dependencies & build artifacts
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Rust / Cargo / Tauri build artifacts
+target/
+src-tauri/target/
+**/*.rs.bk
+Cargo.lock
+
+# ONNX Runtime local shared binaries & large model weights (keep directory structure)
+src-tauri/models/*.onnx
+*.dll
+*.dylib
+*.so
+
+# Diagnostic & runtime logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment variables (keep .env.example tracked)
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# OS & Editor metadata
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json

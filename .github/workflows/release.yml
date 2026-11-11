@@ -1,0 +1,92 @@
+name: "Release — Cross-Platform Build & Pre-Release"
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Release tag (e.g., v0.1.0-alpha.1)"
+        required: true
+        default: "v0.1.0-alpha.1"
+
+permissions:
+  contents: write
+
+jobs:
+  publish-tauri-release:
+    name: "Build & Publish (${{ matrix.label }})"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: "windows-latest"
+            label: "Windows x64 (DirectML / CUDA / CPU)"
+            args: ""
+          - platform: "macos-latest"
+            label: "macOS Apple Silicon (aarch64 — CoreML)"
+            args: "--target aarch64-apple-darwin"
+          - platform: "macos-latest"
+            label: "macOS Intel (x86_64 — CoreML / CPU)"
+            args: "--target x86_64-apple-darwin"
+          - platform: "ubuntu-22.04"
+            label: "Linux x64 (.deb / .AppImage)"
+            args: ""
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install Ubuntu System Dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf xdg-utils
+
+      - name: Setup Rust Stable Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Cache Rust Dependencies
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "src-tauri -> target"
+
+      - name: Install Frontend Dependencies
+        run: npm install
+
+      - name: Verify Frontend Types & Build
+        run: |
+          npm run lint
+          npm run build
+
+      - name: Build & Publish Tauri v2 Pre-Release Bundle
+        uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name || inputs.tag_name || 'v0.1.0-alpha.1' }}
+          releaseName: "OptiCull RAW & Lytro Illum 4D Studio __VERSION__ (Early-Stage Alpha)"
+          releaseBody: |
+            > ⚠️ **ВНИМАНИЕ / EARLY-STAGE DEVELOPMENT NOTICE (ALPHA PRE-RELEASE)**
+            > Данное приложение находится на **ранней стадии активной разработки (`v0.1.0-alpha.1`)**.
+            > Архитектура пайплайна, формат диагностических логов и схема расширенных тегов `xmlns:lytro` могут дополняться в следующих итерациях. Исходные файлы фотографий (`.CR3`, `.NEF`, `.ARW`, `.LFR`) открываются строго в режиме чтения (`read-only`), однако перед пакетной обработкой коммерческих съемок рекомендуется иметь резервную копию каталога.
+
+            ### Что входит в сборку `__VERSION__`
+            - **Многопоточное ядро Rust (`rayon` + `tokio`)**: параллельный скоринг резкости через дисперсию оператора Лапласа ($\text{Var}(\nabla^2 Y)$) и расчет экспокоррекции `crs:Exposure2012` относительно 18% Middle Gray.
+            - **Локальный инференс ONNX Runtime (`ort`)**: динамический выбор ускорителя (`Auto`, `CPU`, `DirectML`, `CoreML`, `CUDA`) с автоматическим откатом (fallback) на CPU при отсутствии драйвера GPU.
+            - **Вычислительная оптика Lytro Illum 4D (`.LFR` / `.LFP`)**: разбор пленоптических контейнеров 40 Megarays, интерактивная пост-фокусировка по шкале глубины $\lambda \in [-10, +15]$, виртуальная диафрагма `f/1.0–f/16`, карта глубины `Depth Map`, сдвиг перспективы $(u, v)$ и авто-спасение кадров (`4D Refocus Salvage`).
+            - **Неразрушающий экспорт Adobe XMP Sidecar**: генерация готовых `.xmp` файлов для Lightroom Classic, Camera Raw, Capture One и Darktable.
+            - **Сквозное диагностическое логирование**: встроенная консоль аудита и экспорт `.log` отчетов для быстрого выявления и устранения ошибок.
+          releaseDraft: false
+          prerelease: true
+          args: ${{ matrix.args }}
