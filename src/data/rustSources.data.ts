@@ -133,7 +133,7 @@ impl AppDiagnosticLogger {
       'Точные фиксированные версии крейтов: ort (ONNX Runtime), image, rawloader, byteorder (для контейнеров Lytro .LFR), rayon, tokio, serde, serde_json, thiserror, tracing и tauri v2.',
     code: `[package]
 name = "opticull-raw"
-version = "0.1.0-alpha.1"
+version = "0.1.0"
 description = "Early-stage (Alpha) автономная десктопная станция пакетного AI-отбора, оценки резкости Лапласа, 4D светового поля Lytro Illum (.LFR) и генерации XMP Sidecar"
 authors = ["OptiCull Open Source Contributors"]
 edition = "2021"
@@ -1864,12 +1864,13 @@ jobs:
         uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+          APPIMAGE_EXTRACT_AND_RUN: "1"
         with:
-          tagName: "v__VERSION__"
-          releaseName: "OptiCull RAW & Lytro Illum 4D Studio v__VERSION__ (Early-Stage Alpha)"
+          tagName: \${{ inputs.tag_name || 'v0.1.0-alpha.1' }}
+          releaseName: "OptiCull RAW & Lytro Illum 4D Studio v0.1.0-alpha.1 (Early-Stage Alpha)"
           releaseBody: |
             > ⚠️ **ВНИМАНИЕ / EARLY-STAGE DEVELOPMENT NOTICE (ALPHA PRE-RELEASE)**
-            > Данное приложение находится на **ранней стадии активной разработки (v__VERSION__)**.
+            > Данное приложение находится на **ранней стадии активной разработки (v0.1.0-alpha.1)**.
             > Исходные файлы фотографий (.CR3, .NEF, .ARW, .LFR) открываются строго в режиме чтения (read-only), однако перед пакетной обработкой коммерческих съемок рекомендуется иметь резервную копию каталога.
           releaseDraft: false
           prerelease: true
@@ -1947,7 +1948,7 @@ jobs:
     code: `{
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "OptiCull RAW",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0",
   "identifier": "io.github.opticull.raw",
   "build": {
     "beforeDevCommand": "npm run dev",

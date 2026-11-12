@@ -113,15 +113,16 @@ jobs:
         uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPIMAGE_EXTRACT_AND_RUN: "1"
         with:
-          tagName: "v__VERSION__"
-          releaseName: "OptiCull RAW & Lytro Illum 4D Studio v__VERSION__ (Early-Stage Alpha)"
+          tagName: ${{ inputs.tag_name || 'v0.1.0-alpha.1' }}
+          releaseName: "OptiCull RAW & Lytro Illum 4D Studio v0.1.0-alpha.1 (Early-Stage Alpha)"
           releaseBody: |
             > ⚠️ **ВНИМАНИЕ / EARLY-STAGE DEVELOPMENT NOTICE (ALPHA PRE-RELEASE)**
-            > Данное приложение находится на **ранней стадии активной разработки (`v__VERSION__`)**.
+            > Данное приложение находится на **ранней стадии активной разработки (`v0.1.0-alpha.1`)**.
             > Архитектура пайплайна, формат диагностических логов и схема расширенных тегов `xmlns:lytro` могут дополняться в следующих итерациях. Исходные файлы фотографий (`.CR3`, `.NEF`, `.ARW`, `.LFR`) открываются строго в режиме чтения (`read-only`), однако перед пакетной обработкой коммерческих съемок рекомендуется иметь резервную копию каталога.
 
-            ### Что входит в сборку `v__VERSION__`
+            ### Что входит в сборку `v0.1.0-alpha.1` (Early-Stage Alpha)
             - **Многопоточное ядро Rust (`rayon` + `tokio`)**: параллельный скоринг резкости через дисперсию оператора Лапласа ($\text{Var}(\nabla^2 Y)$) и расчет экспокоррекции `crs:Exposure2012` относительно 18% Middle Gray.
             - **Локальный инференс ONNX Runtime (`ort`)**: динамический выбор ускорителя (`Auto`, `CPU`, `DirectML`, `CoreML`, `CUDA`) с автоматическим откатом (fallback) на CPU при отсутствии драйвера GPU.
             - **Вычислительная оптика Lytro Illum 4D (`.LFR` / `.LFP`)**: разбор пленоптических контейнеров 40 Megarays, интерактивная пост-фокусировка по шкале глубины $\lambda \in [-10, +15]$, виртуальная диафрагма `f/1.0–f/16`, карта глубины `Depth Map`, сдвиг перспективы $(u, v)$ и авто-спасение кадров (`4D Refocus Salvage`).

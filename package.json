@@ -1,7 +1,7 @@
 {
   "name": "opticull-raw",
   "private": false,
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0",
   "description": "Early-stage open-source station for offline AI photo culling, Lytro Illum 4D (.LFR) light-field refocusing, and non-destructive Adobe XMP sidecar generation (Rust + ONNX Runtime + Tauri v2).",
   "license": "MIT OR Apache-2.0",
   "type": "module",

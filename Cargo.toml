@@ -1,6 +1,6 @@
 [package]
 name = "opticull-raw"
-version = "0.1.0-alpha.1"
+version = "0.1.0"
 description = "Early-stage (Alpha) автономная десктопная станция пакетного AI-отбора, оценки резкости Лапласа, 4D светового поля Lytro Illum (.LFR) и генерации XMP Sidecar"
 authors = ["OptiCull Open Source Contributors"]
 edition = "2021"
