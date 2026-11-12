@@ -154,7 +154,7 @@ serde = { version = "1.0.217", features = ["derive"] }
 serde_json = "1.0.138"
 tokio = { version = "1.43.0", features = ["rt-multi-thread", "macros", "fs", "sync", "time"] }
 rayon = "1.10.0"
-ort = { version = "2.0.0-rc.9", default-features = false, features = ["std", "ndarray", "tracing", "load-dynamic", "cuda", "directml", "coreml"] }
+ort = { version = "=2.0.0-rc.15", default-features = false, features = ["std", "ndarray", "tracing", "load-dynamic", "cuda", "directml", "coreml"] }
 ndarray = "0.16.1"
 image = { version = "0.25.5", default-features = false, features = ["jpeg", "png", "tiff", "webp"] }
 rawloader = "0.37.1"
@@ -244,10 +244,7 @@ use std::sync::Mutex;
 use image::{DynamicImage, imageops::FilterType};
 use ndarray::{Array4, Axis};
 use ort::{
-    execution_providers::{
-        CPUExecutionProvider, CUDAExecutionProvider, CoreMLExecutionProvider,
-        DirectMLExecutionProvider, ExecutionProvider,
-    },
+    ep::{CPU, CUDA, CoreML, DirectML, ExecutionProvider},
     session::{Session, builder::GraphOptimizationLevel},
 };
 use serde::{Deserialize, Serialize};
@@ -405,32 +402,37 @@ impl AiModelManager {
     fn check_provider_available(backend: HardwareBackend) -> bool {
         match backend {
             HardwareBackend::Auto | HardwareBackend::Cpu => true,
-            HardwareBackend::Cuda => CUDAExecutionProvider::default().is_available().unwrap_or(false),
-            HardwareBackend::DirectML => DirectMLExecutionProvider::default().is_available().unwrap_or(false),
-            HardwareBackend::CoreML => CoreMLExecutionProvider::default().is_available().unwrap_or(false),
+            HardwareBackend::Cuda => CUDA::is_available().unwrap_or(false),
+            HardwareBackend::DirectML => DirectML::is_available().unwrap_or(false),
+            HardwareBackend::CoreML => CoreML::is_available().unwrap_or(false),
         }
     }
 
     fn try_build_session(model_path: &Path, backend: HardwareBackend) -> EngineResult<Session> {
-        let builder = Session::builder()
+        let env = ort::init()
+            .with_name("opticull-raw")
+            .build()
+            .map_err(|e| EngineError::OnnxError(format!("Ошибка инициализации ort::Environment: {e}")))?;
+
+        let builder = Session::builder(&env)
             .map_err(|e| EngineError::OnnxError(format!("Ошибка SessionBuilder: {e}")))?
             .with_optimization_level(GraphOptimizationLevel::Level3)
             .map_err(|e| EngineError::OnnxError(format!("Ошибка оптимизации графа: {e}")))?
             .with_intra_threads(4)
             .map_err(|e| EngineError::OnnxError(format!("Ошибка пула потоков ort: {e}")))?;
 
-        let builder = match backend {
+        let mut builder = match backend {
             HardwareBackend::Cuda => builder
-                .with_execution_providers([CUDAExecutionProvider::default().build()])
+                .with_execution_providers([CUDA::default().build()])
                 .map_err(|e| EngineError::OnnxError(format!("Сбой CUDA EP: {e}")))?,
             HardwareBackend::DirectML => builder
-                .with_execution_providers([DirectMLExecutionProvider::default().build()])
+                .with_execution_providers([DirectML::default().build()])
                 .map_err(|e| EngineError::OnnxError(format!("Сбой DirectML EP: {e}")))?,
             HardwareBackend::CoreML => builder
-                .with_execution_providers([CoreMLExecutionProvider::default().build()])
+                .with_execution_providers([CoreML::default().build()])
                 .map_err(|e| EngineError::OnnxError(format!("Сбой CoreML EP: {e}")))?,
             HardwareBackend::Cpu | HardwareBackend::Auto => builder
-                .with_execution_providers([CPUExecutionProvider::default().build()])
+                .with_execution_providers([CPU::default().build()])
                 .map_err(|e| EngineError::OnnxError(format!("Сбой CPU EP: {e}")))?,
         };
 
@@ -1563,7 +1565,7 @@ pub struct LytroRefocusRequest {
 }
 
 #[tauri::command]
-pub fn get_available_backends() -> Vec<BackendOptionDto> {
+fn get_available_backends() -> Vec<BackendOptionDto> {
     AiModelManager::list_available_backends()
         .into_iter()
         .map(|b| BackendOptionDto {
@@ -1574,7 +1576,7 @@ pub fn get_available_backends() -> Vec<BackendOptionDto> {
 }
 
 #[tauri::command]
-pub async fn run_batch_cull(
+async fn run_batch_cull(
     app: AppHandle,
     state: State<'_, AppState>,
     folder_path: String,
@@ -1615,7 +1617,7 @@ pub async fn run_batch_cull(
 }
 
 #[tauri::command]
-pub async fn refocus_lytro_frame(
+async fn refocus_lytro_frame(
     request: LytroRefocusRequest,
 ) -> Result<(LytroIllumMetadata, String), String> {
     tokio::task::spawn_blocking(move || -> Result<(LytroIllumMetadata, String), String> {
@@ -1821,7 +1823,7 @@ jobs:
           workspaces: "src-tauri -> target"
 
       - name: Install Frontend Dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
 
       - name: Verify Frontend Types & Build
         run: |
@@ -1876,7 +1878,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - run: npm install
+      - run: npm install --legacy-peer-deps
       - run: npm run lint
       - run: npm run build
 

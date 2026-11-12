@@ -9,10 +9,7 @@ use std::sync::Mutex;
 use image::{DynamicImage, imageops::FilterType};
 use ndarray::{Array4, Axis};
 use ort::{
-    execution_providers::{
-        CPUExecutionProvider, CUDAExecutionProvider, CoreMLExecutionProvider,
-        DirectMLExecutionProvider, ExecutionProvider,
-    },
+    ep::{CPU, CUDA, CoreML, DirectML, ExecutionProvider},
     session::{Session, builder::GraphOptimizationLevel},
 };
 use serde::{Deserialize, Serialize};
@@ -165,13 +162,13 @@ impl AiModelManager {
     pub fn list_available_backends() -> Vec<HardwareBackend> {
         let mut list = vec![HardwareBackend::Auto, HardwareBackend::Cpu];
 
-        if CUDAExecutionProvider::default().is_available().unwrap_or(false) {
+        if CUDA::is_available().unwrap_or(false) {
             list.push(HardwareBackend::Cuda);
         }
-        if DirectMLExecutionProvider::default().is_available().unwrap_or(false) {
+        if DirectML::is_available().unwrap_or(false) {
             list.push(HardwareBackend::DirectML);
         }
-        if CoreMLExecutionProvider::default().is_available().unwrap_or(false) {
+        if CoreML::is_available().unwrap_or(false) {
             list.push(HardwareBackend::CoreML);
         }
 
@@ -206,33 +203,38 @@ impl AiModelManager {
     fn check_provider_available(backend: HardwareBackend) -> bool {
         match backend {
             HardwareBackend::Auto | HardwareBackend::Cpu => true,
-            HardwareBackend::Cuda => CUDAExecutionProvider::default().is_available().unwrap_or(false),
-            HardwareBackend::DirectML => DirectMLExecutionProvider::default().is_available().unwrap_or(false),
-            HardwareBackend::CoreML => CoreMLExecutionProvider::default().is_available().unwrap_or(false),
+            HardwareBackend::Cuda => CUDA::is_available().unwrap_or(false),
+            HardwareBackend::DirectML => DirectML::is_available().unwrap_or(false),
+            HardwareBackend::CoreML => CoreML::is_available().unwrap_or(false),
         }
     }
 
-    /// Конструирует сессию ONNX Runtime (`ort::Session`) с заданным ExecutionProvider
+    /// Конструирует сессию ONNX Runtime (`ort::session::Session`) с заданным ExecutionProvider
     fn try_build_session(model_path: &Path, backend: HardwareBackend) -> EngineResult<Session> {
-        let builder = Session::builder()
+        let env = ort::init()
+            .with_name("opticull-raw")
+            .build()
+            .map_err(|e| EngineError::OnnxError(format!("Ошибка инициализации ort::Environment: {e}")))?;
+
+        let builder = Session::builder(&env)
             .map_err(|e| EngineError::OnnxError(format!("Ошибка создания SessionBuilder: {e}")))?
             .with_optimization_level(GraphOptimizationLevel::Level3)
             .map_err(|e| EngineError::OnnxError(format!("Ошибка установки уровня оптимизации: {e}")))?
             .with_intra_threads(4)
             .map_err(|e| EngineError::OnnxError(format!("Ошибка настройки пула потоков ort: {e}")))?;
 
-        let builder = match backend {
+        let mut builder = match backend {
             HardwareBackend::Cuda => builder
-                .with_execution_providers([CUDAExecutionProvider::default().build()])
+                .with_execution_providers([CUDA::default().build()])
                 .map_err(|e| EngineError::OnnxError(format!("Сбой регистрации CUDA EP: {e}")))?,
             HardwareBackend::DirectML => builder
-                .with_execution_providers([DirectMLExecutionProvider::default().build()])
+                .with_execution_providers([DirectML::default().build()])
                 .map_err(|e| EngineError::OnnxError(format!("Сбой регистрации DirectML EP: {e}")))?,
             HardwareBackend::CoreML => builder
-                .with_execution_providers([CoreMLExecutionProvider::default().build()])
+                .with_execution_providers([CoreML::default().build()])
                 .map_err(|e| EngineError::OnnxError(format!("Сбой регистрации CoreML EP: {e}")))?,
             HardwareBackend::Cpu | HardwareBackend::Auto => builder
-                .with_execution_providers([CPUExecutionProvider::default().build()])
+                .with_execution_providers([CPU::default().build()])
                 .map_err(|e| EngineError::OnnxError(format!("Сбой регистрации CPU EP: {e}")))?,
         };
 
@@ -283,7 +285,7 @@ impl AiModelManager {
         let input_tensor = Self::preprocess_image_to_tensor(img)?;
 
         if let Some(session_mutex) = &self.session {
-            let session_guard = session_mutex
+            let mut session_guard = session_mutex
                 .lock()
                 .map_err(|_| EngineError::OnnxError("Отравлена блокировка Mutex сессии ONNX".to_string()))?;
 

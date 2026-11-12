@@ -64,7 +64,7 @@ jobs:
           workspaces: "src-tauri -> target"
 
       - name: Install Frontend Dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
 
       - name: Verify Frontend Types & Build
         run: |

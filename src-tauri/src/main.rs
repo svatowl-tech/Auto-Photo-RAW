@@ -75,7 +75,7 @@ pub struct LytroRefocusRequest {
 
 /// Возвращает список доступных аппаратных бэкендов инференса ONNX Runtime
 #[tauri::command]
-pub fn get_available_backends() -> Vec<BackendOptionDto> {
+fn get_available_backends() -> Vec<BackendOptionDto> {
     AiModelManager::list_available_backends()
         .into_iter()
         .map(|b| BackendOptionDto {
@@ -88,7 +88,7 @@ pub fn get_available_backends() -> Vec<BackendOptionDto> {
 /// Асинхронная команда Tauri v2 для запуска пакетного отбора и генерации `.xmp` sidecar-файлов.
 /// Тяжелые вычисления `rayon` выносятся в `tokio::task::spawn_blocking`, чтобы не блокировать цикл событий окна.
 #[tauri::command]
-pub async fn run_batch_cull(
+async fn run_batch_cull(
     app: AppHandle,
     state: State<'_, AppState>,
     folder_path: String,
@@ -135,7 +135,7 @@ pub async fn run_batch_cull(
 /// Команда Tauri v2 для интерактивной перефокусировки 4D-кадра Lytro Illum (`.LFR` / `.LFP`)
 /// и обновления соответствующего `.xmp` sidecar-файла.
 #[tauri::command]
-pub async fn refocus_lytro_frame(
+async fn refocus_lytro_frame(
     request: LytroRefocusRequest,
 ) -> Result<(LytroIllumMetadata, String), String> {
     tokio::task::spawn_blocking(move || -> Result<(LytroIllumMetadata, String), String> {
@@ -179,13 +179,13 @@ pub async fn refocus_lytro_frame(
 
 /// Возвращает последние записи сквозного диагностического журнала из кольцевого буфера Rust
 #[tauri::command]
-pub fn get_system_logs(state: State<'_, AppState>, limit: Option<usize>) -> Vec<DiagnosticLogRecord> {
+fn get_system_logs(state: State<'_, AppState>, limit: Option<usize>) -> Vec<DiagnosticLogRecord> {
     state.diagnostic_logger.get_recent_records(limit.unwrap_or(500))
 }
 
 /// Очищает кольцевой буфер диагностического журнала
 #[tauri::command]
-pub fn clear_system_logs(state: State<'_, AppState>) {
+fn clear_system_logs(state: State<'_, AppState>) {
     state.diagnostic_logger.clear();
 }
 

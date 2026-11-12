@@ -27,7 +27,7 @@ tokio = { version = "1.43.0", features = ["rt-multi-thread", "macros", "fs", "sy
 rayon = "1.10.0"
 
 # Локальный нейросетевой инференс ONNX Runtime с аппаратным ускорением
-ort = { version = "2.0.0-rc.9", default-features = false, features = ["std", "ndarray", "tracing", "load-dynamic", "cuda", "directml", "coreml"] }
+ort = { version = "=2.0.0-rc.15", default-features = false, features = ["std", "ndarray", "tracing", "load-dynamic", "cuda", "directml", "coreml"] }
 ndarray = "0.16.1"
 
 # Декодирование классических RAW, JPEG/PNG и контейнеров Lytro .LFR/.LFP
