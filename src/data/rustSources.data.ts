@@ -1761,6 +1761,9 @@ cargo tauri build
 
 on:
   push:
+    branches:
+      - main
+      - master
     tags:
       - "v*"
   workflow_dispatch:
@@ -1774,8 +1777,33 @@ permissions:
   contents: write
 
 jobs:
+  create-github-prerelease:
+    name: "Initialize Early-Stage Alpha Pre-Release (v0.1.0-alpha.1)"
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create or Update GitHub Pre-Release (v0.1.0-alpha.1)
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: \${{ inputs.tag_name || 'v0.1.0-alpha.1' }}
+          name: "OptiCull RAW & Lytro Illum 4D Studio v0.1.0-alpha.1 (Early-Stage Alpha)"
+          draft: false
+          prerelease: true
+          files: |
+            README.md
+            CHANGELOG.md
+            LICENSE
+          body: |
+            > ⚠️ **ВНИМАНИЕ / EARLY-STAGE DEVELOPMENT NOTICE (ALPHA PRE-RELEASE)**
+            > Данное приложение находится на **ранней стадии активной разработки (v0.1.0-alpha.1)**.
+
   publish-tauri-release:
-    name: "Build & Publish (\${{ matrix.label }})"
+    name: "Build & Attach Installer (\${{ matrix.label }})"
+    needs: create-github-prerelease
     strategy:
       fail-fast: false
       matrix:
@@ -1810,7 +1838,7 @@ jobs:
         if: matrix.platform == 'ubuntu-22.04'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf xdg-utils
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev patchelf xdg-utils libfuse2
 
       - name: Setup Rust Stable Toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -1822,24 +1850,26 @@ jobs:
         with:
           workspaces: "src-tauri -> target"
 
-      - name: Install Frontend Dependencies
-        run: npm install --legacy-peer-deps
+      - name: Install Frontend Dependencies & Tauri CLI v2
+        run: |
+          npm install --legacy-peer-deps
+          npm install --no-save --legacy-peer-deps @tauri-apps/cli@2.2.0
 
       - name: Verify Frontend Types & Build
         run: |
           npm run lint
           npm run build
 
-      - name: Build & Publish Tauri v2 Pre-Release Bundle
+      - name: Build & Upload Tauri v2 Pre-Release Bundles
         uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: \${{ github.ref_name || inputs.tag_name || 'v0.1.0-alpha.1' }}
-          releaseName: "OptiCull RAW & Lytro Illum 4D Studio __VERSION__ (Early-Stage Alpha)"
+          tagName: "v__VERSION__"
+          releaseName: "OptiCull RAW & Lytro Illum 4D Studio v__VERSION__ (Early-Stage Alpha)"
           releaseBody: |
             > ⚠️ **ВНИМАНИЕ / EARLY-STAGE DEVELOPMENT NOTICE (ALPHA PRE-RELEASE)**
-            > Данное приложение находится на **ранней стадии активной разработки (v0.1.0-alpha.1)**.
+            > Данное приложение находится на **ранней стадии активной разработки (v__VERSION__)**.
             > Исходные файлы фотографий (.CR3, .NEF, .ARW, .LFR) открываются строго в режиме чтения (read-only), однако перед пакетной обработкой коммерческих съемок рекомендуется иметь резервную копию каталога.
           releaseDraft: false
           prerelease: true
