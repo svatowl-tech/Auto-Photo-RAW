@@ -43,7 +43,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "npm"
+
+      - name: Ensure Tauri v2 Icons & Capabilities
+        run: node scripts/ensure-tauri-assets.mjs
 
       - name: Install Ubuntu System Dependencies
         if: matrix.platform == 'ubuntu-22.04'

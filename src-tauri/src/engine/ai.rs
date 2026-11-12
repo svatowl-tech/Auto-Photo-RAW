@@ -283,12 +283,16 @@ impl AiModelManager {
         let input_tensor = Self::preprocess_image_to_tensor(img)?;
 
         if let Some(session_mutex) = &self.session {
-            let mut session_guard = session_mutex
+            let session_guard = session_mutex
                 .lock()
                 .map_err(|_| EngineError::OnnxError("Отравлена блокировка Mutex сессии ONNX".to_string()))?;
 
-            let ort_input = ort::value::Value::from_array(input_tensor.clone())
-                .map_err(|e| EngineError::OnnxError(format!("Ошибка упаковки ndarray в ort::Value: {e}")))?;
+            let flat_data: Vec<f32> = input_tensor.iter().copied().collect();
+            let ort_input = ort::value::Tensor::from_array((
+                [1usize, 3, INPUT_SIZE as usize, INPUT_SIZE as usize],
+                flat_data.into_boxed_slice(),
+            ))
+            .map_err(|e| EngineError::OnnxError(format!("Ошибка упаковки тензора в ort::value::Tensor: {e}")))?;
 
             let outputs = session_guard
                 .run(ort::inputs![ort_input])
@@ -368,6 +372,7 @@ impl AiModelManager {
         let subject_separation = (center_avg / (border_avg + 0.25)).clamp(0.5, 1.6);
 
         let final_score = 4.2 + contrast_quality * 3.4 + (subject_separation - 0.5) * 2.1;
-        Ok((final_score * 100.0).round() / 100.0_f32).map(|s| s.clamp(1.0, 9.9))
+        let rounded = ((final_score * 100.0).round() / 100.0_f32).clamp(1.0, 9.9);
+        Ok(rounded)
     }
 }

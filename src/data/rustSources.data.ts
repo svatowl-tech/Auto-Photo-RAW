@@ -133,43 +133,35 @@ impl AppDiagnosticLogger {
       'Точные фиксированные версии крейтов: ort (ONNX Runtime), image, rawloader, byteorder (для контейнеров Lytro .LFR), rayon, tokio, serde, serde_json, thiserror, tracing и tauri v2.',
     code: `[package]
 name = "opticull-raw"
-version = "1.4.0"
-description = "Автономная десктопная станция пакетного AI-отбора, оценки резкости Лапласа, 4D светового поля Lytro Illum (.LFR) и генерации XMP Sidecar"
-authors = ["OptiCull Core Engineering"]
+version = "0.1.0-alpha.1"
+description = "Early-stage (Alpha) автономная десктопная станция пакетного AI-отбора, оценки резкости Лапласа, 4D светового поля Lytro Illum (.LFR) и генерации XMP Sidecar"
+authors = ["OptiCull Open Source Contributors"]
 edition = "2021"
 rust-version = "1.81"
 license = "MIT OR Apache-2.0"
+repository = "https://github.com/opticull/opticull-raw"
 
-[lib]
-name = "opticull_raw_lib"
-crate-type = ["staticlib", "cdylib", "rlib"]
+[[bin]]
+name = "opticull-raw"
+path = "src/main.rs"
 
 [build-dependencies]
-tauri-build = { version = "=2.0.5", features = [] }
+tauri-build = { version = "2.0.5", features = [] }
 
 [dependencies]
-# Tauri v2 ядро и сериализация
-tauri = { version = "=2.2.5", features = ["protocol-asset"] }
-serde = { version = "=1.0.217", features = ["derive"] }
-serde_json = "=1.0.138"
-
-# Асинхронная среда выполнения и многопоточный пул данных
-tokio = { version = "=1.43.0", features = ["rt-multi-thread", "macros", "fs", "sync", "time"] }
-rayon = "=1.10.0"
-
-# Локальный нейросетевой инференс ONNX Runtime с аппаратным ускорением
-ort = { version = "=2.0.0-rc.9", features = ["load-dynamic", "cuda", "directml", "coreml", "ndarray"] }
-ndarray = "=0.16.1"
-
-# Декодирование классических RAW, JPEG/PNG и контейнеров Lytro .LFR/.LFP
-image = { version = "=0.25.5", default-features = false, features = ["jpeg", "png", "tiff", "webp"] }
-rawloader = "=0.37.1"
-byteorder = "=1.5.0"
-
-# Обработка ошибок и структурное логирование
-thiserror = "=2.0.11"
-tracing = "=0.1.41"
-tracing-subscriber = { version = "=0.3.19", features = ["env-filter", "fmt"] }
+tauri = { version = "2.2.5", features = [] }
+serde = { version = "1.0.217", features = ["derive"] }
+serde_json = "1.0.138"
+tokio = { version = "1.43.0", features = ["rt-multi-thread", "macros", "fs", "sync", "time"] }
+rayon = "1.10.0"
+ort = { version = "2.0.0-rc.9", default-features = false, features = ["std", "ndarray", "tracing", "load-dynamic", "cuda", "directml", "coreml"] }
+ndarray = "0.16.1"
+image = { version = "0.25.5", default-features = false, features = ["jpeg", "png", "tiff", "webp"] }
+rawloader = "0.37.1"
+byteorder = "1.5.0"
+thiserror = "2.0.11"
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter", "fmt"] }
 
 [profile.release]
 panic = "abort"
@@ -1808,7 +1800,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "npm"
+
+      - name: Ensure Tauri v2 Icons & Capabilities
+        run: node scripts/ensure-tauri-assets.mjs
 
       - name: Install Ubuntu System Dependencies
         if: matrix.platform == 'ubuntu-22.04'
@@ -1863,6 +1857,8 @@ on:
     branches:
       - main
       - master
+      - "feat/**"
+      - "fix/**"
   pull_request:
     branches:
       - main
@@ -1880,7 +1876,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "npm"
       - run: npm install
       - run: npm run lint
       - run: npm run build
@@ -1894,6 +1889,11 @@ jobs:
     runs-on: \${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Ensure Tauri v2 Icons, Capabilities & Dist Assets
+        run: node scripts/ensure-tauri-assets.mjs
       - name: Install Linux Dependencies
         if: matrix.os == 'ubuntu-22.04'
         run: |
@@ -1926,6 +1926,7 @@ jobs:
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "OptiCull RAW & Lytro Illum 4D Studio (Early Alpha v0.1.0-alpha.1)",
         "width": 1440,
         "height": 900,
@@ -1942,6 +1943,13 @@ jobs:
   "bundle": {
     "active": true,
     "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
     "category": "Photography",
     "shortDescription": "Offline AI Photo Culling, Lytro Illum 4D Light Field Refocus & XMP Sidecar Studio"
   }

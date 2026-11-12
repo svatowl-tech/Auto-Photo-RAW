@@ -27,7 +27,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "npm"
 
       - name: Install dependencies
         run: npm install
@@ -48,6 +47,14 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Setup Node.js 22 LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Ensure Tauri v2 Icons, Capabilities & Dist Assets
+        run: node scripts/ensure-tauri-assets.mjs
 
       - name: Install Linux WebKitGTK & System Dependencies
         if: matrix.os == 'ubuntu-22.04'

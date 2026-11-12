@@ -12,6 +12,7 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "OptiCull RAW & Lytro Illum 4D Studio (Early Alpha v0.1.0-alpha.1)",
         "width": 1440,
         "height": 900,
@@ -28,6 +29,13 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
     "category": "Photography",
     "shortDescription": "Offline AI Photo Culling, Lytro Illum 4D Light Field Refocus & XMP Sidecar Studio",
     "longDescription": "Early-stage open-source cross-platform desktop application built with Rust, ONNX Runtime, and Tauri v2 for batch photo culling, Laplacian sharpness scoring, Lytro Illum 4D (.LFR) light-field refocusing, and non-destructive Adobe XMP sidecar generation."
